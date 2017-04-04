@@ -1,0 +1,13 @@
+{
+	"name": "peterbodnar.com/reselty",
+	"description": "",
+	"keywords": ["database"],
+	"license": ["BSD-3-Clause", "GPL-2.0", "GPL-3.0"],
+	"autoload": {"psr-4": {"com\\peterbodnar\\reselty\\": "src/"}},
+	"require": {
+		"php": "^5.4 || ^7.0",
+		"nette/database": "^2.4",
+		"nette/reflection": "^2.4",
+		"nette/utils": "^2.4"
+	}
+}
