@@ -12,31 +12,31 @@ final class EntityDefinition
 	use SmartObject;
 
 
-	/** @var ClassAnnotations */
-	private $annotations;
+	/** @var ClassDefinition */
+	private $classDef;
 
 
 	/** @param string $className */
 	private function __construct($className)
 	{
-		$this->annotations = new ClassAnnotations($className);
+		$this->classDef = new ClassDefinition($className);
 	}
 
 
 	/** @return string */
 	public function getTableName()
 	{
-		return $this->annotations->get("table");
+		return $this->classDef->getAnnotation("table");
 	}
 
 
 	/**
 	 * @param string $name
-	 * @return ClassAnnotations_Property|null
+	 * @return PropertyDefinition|null
 	 */
 	public function getProperty($name)
 	{
-		return $this->annotations->getProperty($name);
+		return $this->classDef->getProperty($name);
 	}
 
 

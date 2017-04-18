@@ -2,6 +2,7 @@
 
 namespace com\peterbodnar\reselty;
 
+use com\peterbodnar\reselty\utils\SelectionDefinition;
 use Latte\RuntimeException;
 use Nette\Database\Context;
 use Nette\Database\Table\Selection as TableSelection;
@@ -12,7 +13,9 @@ use Nette\SmartObject;
 
 abstract class Repository
 {
-	use SmartObject;
+	use SmartObject {
+		__get as ___get;
+	}
 
 
 	/** @var Context */
@@ -26,11 +29,30 @@ abstract class Repository
 	}
 
 
-	/** @return TableSelection */
-	protected function table()
+	/**
+	 * @return void
+	 * @throws InvalidArgumentException
+	 */
+	private function validateEntityType(Entity $entity)
 	{
-		$table = $this->def()->getTableName();
-		return $this->db->table($table);
+		$allEntityClasses = $this->def()->getEntityClassNames();
+		foreach ($allEntityClasses as $entityClassName) {
+			if (is_a($entity, $entityClassName)) {
+				return;
+			}
+		}
+		throw new \InvalidArgumentException("Invalid entity");
+	}
+
+
+	/**
+	 * @param string $name
+	 * @return Selection|null
+	 */
+	protected function createSelection($name)
+	{
+		$selectionClass = $this->def()->getSelectionClassName($name);
+		return (NULL !== $selectionClass) ? new $selectionClass($this->db) : NULL;
 	}
 
 
@@ -41,23 +63,32 @@ abstract class Repository
 	}
 
 
-	/** @return Selection */
-	public function selection()
+	public function insert(Entity $entity)
 	{
-		$selectionClass = $this->def()->getSelectionClassName();
-		return new $selectionClass($this->table());
+		$this->validateEntityType($entity);
+		throw new \RuntimeException("Not implemented");
 	}
 
 
-	/** @param Entity $entity */
-	public function save(Entity $entity)
+	public function update(Entity $entity)
 	{
-		$entityClass = $this->def()->getEntityClassName();
-		if (!is_a($entity, $entityClass)) {
-			throw new \InvalidArgumentException();
+		$this->validateEntityType($entity);
+		throw new \RuntimeException("Not implemented");
+	}
+
+
+	/**
+	 * @param string $name
+	 * @return mixed
+	 */
+	public function &__get($name)
+	{
+		$selection = $this->createSelection($name);
+		if ($selection) {
+			return $selection;
 		}
 
-		throw new \RuntimeException("Not implemented");
+		return $this->___get($name);
 	}
 
 }

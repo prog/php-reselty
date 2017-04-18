@@ -19,29 +19,38 @@ final class SelectionDefinition
 
 	private function __construct($className)
 	{
-		$annos = new ClassAnnotations($className);
-		$fetchMethod = $annos->getMethod('fetch()');
-		$fetchOneMethod = $annos->getMethod('fetchOne()');
+		$annos = new ClassDefinition($className);
+		$fetchOneMethod = $annos->getMethod('fetch()');
+		$fetchAllMethod = $annos->getMethod('fetchAll()');
+		$getIteratorMethod = $annos->getMethod('getIterator()');
 
-		$fetchReturn = $fetchMethod ? $fetchMethod->getReturnType() : NULL;
-		$fetchRetClass = $fetchReturn ? $fetchReturn->getClassName() : NULL;
+		$fetchAllReturn = $fetchAllMethod ? $fetchAllMethod->getReturnType() : NULL;
+		$fetchAllRetClass = $fetchAllReturn ? $fetchAllReturn->getClassName() : NULL;
+		$getIteratorReturn = $getIteratorMethod ? $getIteratorMethod->getReturnType() : NULL;
+		$getIteratorRetClass = $getIteratorReturn ? $getIteratorReturn->getClassName() : NULL;
 		$fetchOneReturn = $fetchOneMethod ? $fetchOneMethod->getReturnType() : NULL;
 		$fetchOneRetClass = $fetchOneMethod ? $fetchOneReturn->getClassName() : NULL;
 
-		if (!$fetchMethod || !$fetchReturn->isArray() || $fetchReturn->isNullable()) {
-			throw new \RuntimeException("Missing or invalid @method <EntityClass>[] fetch() annotation: {$className}");
+		if (!$fetchAllMethod || !$fetchAllReturn->isArray() || $fetchAllReturn->isNullable()) {
+			throw new \RuntimeException("Missing or invalid @method <EntityClass>[] fetchAll() annotation: {$className}");
+		}
+		if (!$getIteratorMethod || !$getIteratorReturn->isArray() || $getIteratorReturn->isNullable()) {
+			throw new \RuntimeException("Missing or invalid @method <EntityClass>[] getIterator() annotation: {$className}");
 		}
 		if (!$fetchOneMethod || $fetchOneReturn->isArray() || !$fetchOneReturn->isNullable()) {
 			throw new \RuntimeException("Missing or invalid @method <EntityClass>|null fetchOne() annotation: {$className}");
 		}
-		if ($fetchRetClass !== $fetchOneRetClass) {
-			throw new \RuntimeException("fetch() and fetchOne() annotated return types does not match: {$className}");
+		if ($fetchAllRetClass !== $getIteratorRetClass) {
+			throw new \RuntimeException("fetchAll() and getIterator() annotated return types does not match: {$className}");
 		}
-		if ($fetchRetClass === Entity::class || !$fetchReturn->isClass(Entity::class)) {
-			throw new \RuntimeException("Invalid return type in annotations @method <EntityClass> fetch(), fetchOne() in {$className}");
+		if ($fetchAllRetClass !== $fetchOneRetClass) {
+			throw new \RuntimeException("fetchAll() and fetch() annotated return types does not match: {$className}");
+		}
+		if ($fetchAllRetClass === Entity::class || !$fetchAllReturn->isClass(Entity::class)) {
+			throw new \RuntimeException("Invalid return type in annotations @method <EntityClass> getIterator(), fetchAll(), fetch() in {$className}");
 		}
 
-		$this->entityClass = $fetchRetClass;
+		$this->entityClass = $fetchAllRetClass;
 	}
 
 

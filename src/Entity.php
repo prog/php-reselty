@@ -3,6 +3,7 @@
 namespace com\peterbodnar\reselty;
 
 use com\peterbodnar\reselty\utils\SelectionDefinition;
+use Nette\Database\Context as DbContext;
 use Nette\Database\Table\IRow;
 use Nette\SmartObject;
 
@@ -16,6 +17,8 @@ abstract class Entity
 	}
 
 
+	/** @var DbContext */
+	protected $dbContext;
 	/** @var IRow|NULL */
 	protected $row;
 	/** @var array */
@@ -32,8 +35,9 @@ abstract class Entity
 	/**
 	 * @param IRow $row
 	 */
-	public function __construct(IRow $row = NULL)
+	public function __construct(DbContext $dbContext, IRow $row = NULL)
 	{
+		$this->dbContext = $dbContext;
 		$this->row = $row;
 		$this->data = [];
 	}
@@ -58,7 +62,7 @@ abstract class Entity
 			}
 
 			$type = $prop->getType();
-			$dbName = self::camelToUnder($prop->getName());
+			$dbName = utils\Helpers::camelToUnder($prop->getName());
 
 			if ($type->isScalar()) {
 
@@ -69,7 +73,7 @@ abstract class Entity
 
 				$entityClassName = $type->getClassName();
 				$row = $this->row->ref($dbName);
-				$result = new $entityClassName($row);
+				$result = new $entityClassName($this->dbContext, $row);
 				return $result;
 
 			} elseif ($type->isClass(Selection::class)) {
@@ -77,7 +81,7 @@ abstract class Entity
 				$selectionClassName = $type->getClassName();
 				$tableName = SelectionDefinition::get($selectionClassName)->getTableName();
 				$tableSelection = $this->row->related($tableName);
-				$result = new $selectionClassName($tableSelection);
+				$result = new $selectionClassName($this->dbContext, $tableSelection);
 				return $result;
 
 				throw new \RuntimeException("Not implemented");
@@ -98,31 +102,6 @@ abstract class Entity
 	public function __set($var, $val)
 	{
 		$this->___set($var, $val);
-	}
-
-
-	/**
-	 * @param string $s
-	 * @return mixed|string
-	 */
-	private static function camelToUnder($s)
-	{
-		$s = preg_replace('/(?<!^)[A-Z]/', '_$0', $s);
-		$s = strtolower($s);
-		return $s;
-	}
-
-
-	/**
-	 * @param string $s
-	 * @return string
-	 */
-	private static function underToCamel($s)
-	{
-		$s = str_replace('_', ' ', $s);
-		$s = substr(ucwords('x' . $s), 1);
-		$s = str_replace(' ', '', $s);
-		return $s;
 	}
 
 }

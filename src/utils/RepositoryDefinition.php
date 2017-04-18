@@ -3,7 +3,6 @@
 namespace com\peterbodnar\reselty\utils;
 
 use com\peterbodnar\reselty\Selection;
-use com\peterbodnar\reselty\utils\SelectionDefinition;
 use Nette\SmartObject;
 
 
@@ -14,8 +13,23 @@ final class RepositoryDefinition
 	use SmartObject;
 
 
-	/** @var string */
-	private $selectionClassName;
+	/** @var string[] */
+	private $selectionClassNames = [];
+	/** @var string[]|null */
+	private $entityClassNames = NULL;
+	/** @return string[] */
+
+
+	public function getEntityClassNames()
+	{
+		if (NULL === $this->entityClassNames) {
+			$this->entityClassNames = [];
+			foreach ($this->selectionClasses as $propName => $className) {
+				$entityClassNames[$propName] = SelectionDefinition::get($className)->getEntityClassName();
+			}
+		}
+		return $this->entityClassNames;
+	}
 
 
 	/**
@@ -23,52 +37,28 @@ final class RepositoryDefinition
 	 */
 	private function __construct($className)
 	{
-		$annotations = new ClassAnnotations($className);
-		$selectionMethod = $annotations->getMethod("selection()");
-		if (!$selectionMethod) {
-			throw new \RuntimeException("Missing @method <SelectionClass> selection() annotation: {$className}");
+		$classDef = new ClassDefinition($className);
+		$properties = $classDef->getProperties();
+		foreach ($properties as $prop) {
+			$type = $prop->getType();
+			if ($prop->getType()->isClass(Selection::class)) {
+				$this->selectionClassNames[$prop->getName()] = $type->getClassName();
+			}
 		}
-		$selectionClass = $selectionMethod->getReturnType()->getClassName();
-		if (NULL === $selectionClass || !is_a($selectionClass, Selection::class, TRUE)) {
-			throw new \RuntimeException("Invalid return type in annotation @method <SelectionClass> selection() in {$className}");
-		}
-		$this->selectionClassName = $selectionClass;
 	}
 
 
-	/** @return string */
-	public function getSelectionClassName()
+	/**
+	 * @param string $name
+	 * @return string|null
+	 */
+	public function getSelectionClassName($name)
 	{
-		return $this->selectionClassName;
+		return isset($this->selectionClassNames[$name]) ? $this->selectionClassNames[$name] : NULL;
 	}
 
 
-	/** @return SelectionDefinition */
-	public function getSelectionDefinition()
-	{
-		return SelectionDefinition::get($this->selectionClassName);
-	}
-
-
-	/** @return string */
-	public function getEntityClassName()
-	{
-		return $this->getSelectionDefinition()->getEntityClassName();
-	}
-
-
-	/** @return EntityDefinition */
-	public function getEntityDefinition()
-	{
-		return $this->getSelectionDefinition()->getEntityDefinition();
-	}
-
-
-	/** @return string */
-	public function getTableName()
-	{
-		return $this->getSelectionDefinition()->getTableName();
-	}
+	// -- static
 
 
 	/** @var RepositoryDefinition[] */
